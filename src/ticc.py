@@ -23,7 +23,7 @@ print(file_list)
 
 # load data
 dataset = 'dataset1'
-case = [3, 8]
+cases = [3, 8]
 resample_interval = None  # '60T' # T=min
 
 data_sensor = []
@@ -31,12 +31,13 @@ data_bay = []
 data_pmmode = []
 sensor_cols_merge = []
 
-for num_case in case:
-    num_case = num_case - 1
+for case in cases:
+    case = case - 1
+
     if dataset == 'dataset2':
-        fname = file_list[num_case + 24]
+        fname = file_list[case + 24]
     else:
-        fname = file_list[num_case]
+        fname = file_list[case]
 
     df = pd.read_csv(fname, low_memory=False)
 
@@ -60,22 +61,15 @@ for num_case in case:
     # bays = df.loc[:, df.columns.str.contains('Bay_NH3')].columns.drop(list(df.filter(regex='Filter')))
 
     sensor_cols = list(df.columns[df.columns.str.contains('ACNTS')])
+    print(sensor_cols)
 
     pm_mode_temp = pm_mode.iloc[:, 0]
-
-    # plot data samples
-    # fig, ax = plt.subplots(figsize=(20, 5))
-    # trans = mtransforms.blended_transform_factory(ax.transData, ax.transAxes)
-    # ax.fill_between(pm_mode.index.values, 0, 1, where=pm_mode.sum(axis=1) != 0,
-    #                 facecolor='r', alpha=0.3, transform=trans)
-    # ax.plot(df, alpha=0.8, linewidth=0.5)
-    # plt.show()
 
     # concatenate data
     data_sensor.append(df[sensor_cols])
     data_bay.append(df[bay_cols])
     data_pmmode.append(pm_mode)
-
+quit()
 df_sensor = pd.concat(data_sensor)  # overlap with each same port
 df_bay = pd.concat(data_bay)
 df_pmmode = pd.concat(data_pmmode)
