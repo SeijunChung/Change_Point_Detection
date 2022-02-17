@@ -5,7 +5,6 @@ import pandas as pd
 
 from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
-import matplotlib.transforms as mtransforms
 
 cmaps= ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf',
         '#3182BD', '#6BAED6', '#9ECAE1', '#E6550D', '#FD8D3C',
@@ -14,82 +13,6 @@ cmaps= ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377
 
 file_list = sorted(glob.glob("../data/CPD/csv/*.csv"))
 print(file_list)
-
-# load data
-dataset = 'dataset1'
-cases = [1]
-resample_interval = None  # '60T' # T=min
-
-data_sensor = []
-data_bay = []
-data_pmmode = []
-sensor_cols_merge = []
-
-for case in cases:
-    case = case - 1
-
-    if dataset == 'dataset2':
-        fname = file_list[case + 24]
-    else:
-        fname = file_list[case]
-
-    df = pd.read_csv(fname, low_memory=False)
-
-    # extract time index
-    df.set_index(['Date'], inplace=True)
-    df.index = pd.to_datetime(df.index)
-    df = df.sort_index()
-
-    # sensors = df.loc[:, df.columns.str.contains('Bay_NH3')]
-    pm_mode_cols = list(df.columns[df.columns.str.contains('PM Mode')])
-    pm_mode = df[pm_mode_cols]
-    pm_mode = pm_mode.replace({False: 0, True: 1, np.nan: 0})
-
-    # forwardfill Nan with linear interpolation
-    bay_cols = list(df.columns[df.columns.str.contains('Bay_NH3')])
-    bay_cols = [x for x in bay_cols if "Filter" not in x]
-
-    sensor_cols = list(df.columns[df.columns.str.contains('ACNTS')])
-
-    pm_mode_temp = pm_mode.iloc[:, 0]
-
-    # concatenate data
-    data_sensor.append(df[sensor_cols])
-    data_bay.append(df[bay_cols])
-    data_pmmode.append(pm_mode)
-    print(df[sensor_cols].shape)
-
-df_sensor = pd.concat(data_sensor)  # overlap with each same port
-df_bay = pd.concat(data_bay)
-df_pmmode = pd.concat(data_pmmode)
-
-# # including bay NH3 into sensor data ///////////////////////////////////
-# df_sensor = pd.concat([df_bay, df_sensor], axis=1)
-
-# reset column names to integer
-df_sensor.columns = range(df_sensor.shape[1])
-df_sensor = df_sensor.sort_index().reset_index(drop=True)
-df_pmmode = df_pmmode.sort_index().reset_index(drop=True)
-
-
-# df_sensor = df_sensor.interpolate(method='linear', limit_direction='forward')
-# print('before dropna:', df_sensor.shape, df_pmmode.shape)
-# # df_sensor = df_sensor.dropna()
-# # df_pmmode = df_pmmode.dropna()
-# df_sensor = df_sensor.fillna(0)
-# df_pmmode = df_pmmode.fillna(0)
-# print('after dropna:', df_sensor.shape, df_pmmode.shape)
-
-# # Normalization with Standard scaler
-scaler = StandardScaler()
-scaler.fit(df_sensor)
-df_sensor = scaler.transform(df_sensor)
-
-# save txt
-# np.savetxt('output_folder/Data_sensor_{}_{}case_{}.txt'.format(dataset,case,resample_interval), df_sensor, fmt='%d', delimiter=',')
-# np.savetxt('output_folder/Data_pmmode_{}_{}case_{}.txt'.format(dataset,case,resample_interval), df_pmmode, fmt='%d', delimiter=',')
-# print('txt file is saved: output_folder/Data_sensor_{}_{}case_{}_includingbay.txt'.format(dataset,case,resample_interval))
-# print('txt file is saved: output_folder/Data_pmmode_{}_{}case_{}.txt'.format(dataset,case,resample_interval))
 
 
 BOCD = {'case': [1,8,9,14,4],
@@ -117,8 +40,6 @@ for itt in range(1):
     resample_interval = None  # '60T' # T=min
 
     data_sensor = []
-    data_bay = []
-    data_pmmode = []
     sensor_cols_merge = []
     for num_case in case:
         num_case = num_case - 1
@@ -135,40 +56,21 @@ for itt in range(1):
         df.index = pd.to_datetime(df.index)
         df = df.sort_index()
 
-        pm_mode_cols = list(df.columns[df.columns.str.contains('PM Mode')])
-        pm_mode = df[pm_mode_cols]
-        pm_mode = pm_mode.replace({False: 0, True: 1, np.nan: 0})
-
         sensor_cols = list(df.columns[df.columns.str.contains('ACNTS')])
-
-        pm_mode_temp = pm_mode.iloc[:, 0]
 
         # concatenate data
         data_sensor.append(df[sensor_cols])
-        data_pmmode.append(pm_mode)
-    df_sensor = pd.concat(data_sensor)  # overlap with each same port
-    df_pmmode = pd.concat(data_pmmode)
+    df_sensor = pd.concat(data_sensor)
 
     # reset column names to integer
     df_sensor.columns = range(df_sensor.shape[1])
     df_sensor = df_sensor.sort_index().reset_index(drop=True)
-    df_pmmode = df_pmmode.sort_index().reset_index(drop=True)
 
-    df_sensor = df_sensor.interpolate(method='linear', limit_direction='forward')
-    df_sensor = df_sensor.fillna(0)
-    df_pmmode = df_pmmode.fillna(0)
+    # scaler = StandardScaler()
+    # df_sensor = scaler.fit_transform(df_sensor)
 
     #### TICC training
     fname = df_sensor[BOCD['start'][itt]:BOCD['end'][itt]].reset_index(drop=True)
-    df_pmmode = df_pmmode[BOCD['start'][itt]:BOCD['end'][itt]].reset_index(drop=True)
-
-    # xtick options
-    #     idx_orig = []
-    #     for tpoint in range(0, BOCD['end'][itt]-BOCD['start'][itt], 1000):
-    #         idx_orig.append(tpoint)
-    #     idx_val = []
-    #     for tpoint in range(BOCD['start'][itt], BOCD['end'][itt], 1000):
-    #         idx_val.append(tpoint)
 
     t = 0
     bic = []
